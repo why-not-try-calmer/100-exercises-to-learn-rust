@@ -1,23 +1,36 @@
 {
+  description = "A devShell example";
+
   inputs = {
-    nixpkgs.url = "https://github.com/NixOS/nixpkgs/archive/54aac082a4d9.tar.gz";
-    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url      = "github:NixOS/nixpkgs/nixos-unstable";
+    rust-overlay.url = "github:oxalica/rust-overlay";
+    flake-utils.url  = "github:numtide/flake-utils";
   };
-  outputs = { self, nixpkgs, flake-utils }:
+
+  outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
+        overlays = [ (import rust-overlay) ];
+        pkgs = import nixpkgs {
+          inherit system overlays;
+        };
       in
       {
-        devShell = pkgs.mkShell rec {
+        devShells.default = with pkgs; mkShell {
           buildInputs = [
-            pkgs.gcc
+            openssl
+            pkg-config
+            eza
+            fd
+            (pkgs.rust-bin.stable.latest.rust.override {
+              extensions = ["rust-src"];
+            })
           ];
-          # shellHook = ''
-          # 	export LD_LIBRARY_PATH = "${
-          #     pkgs.lib.makeLibraryPath (with pkgs; [stdenv.cc.cc openssl_1_1 ] )
-          # 	}:$LD_LIBRARY_PATH"
-          # '';
+
+          shellHook = ''
+            alias ls=eza
+            alias find=fd
+          '';
         };
       }
     );
