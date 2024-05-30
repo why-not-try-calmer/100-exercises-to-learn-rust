@@ -4,6 +4,9 @@ pub fn factorial(n: u32) -> u32 {
         // Use saturating multiplication to stop at the maximum value of u32
         // rather than overflowing and wrapping around
         result *= i;
+        if result >= u32::MAX {
+            break
+        }
     }
     result
 }
